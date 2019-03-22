@@ -1,4 +1,8 @@
 #!/bin/bash
+# Linux 下Agent 打包
+# 直接打包
+# -f 参数 可以打包+刷新253的agent
+
 
 #源码目录
 WORKDIR=$GOPATH/src/agent
@@ -45,6 +49,9 @@ ls
 
 
 
+
+
+
 if [ ! -n "$1" ];then
 	echo "!!! no refresh local agent"
 elif [ "$1" == "-f" ];then
@@ -59,9 +66,13 @@ elif [ "$1" == "-f" ];then
 	
 	ls -l  ${LOCALAGENTDIR}
 	echo "--------------finish refresh agent--------------"
-
+elif [ "$1" == "-h" ]; then
+	echo `
+			-h show help
+			-f refresh local agent
+	
+	`
 fi
-
 
 
 
