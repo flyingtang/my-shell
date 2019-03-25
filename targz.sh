@@ -18,69 +18,121 @@ TARNAME="agent.tar.gz"
 #本地系统agent目录
 LOCALAGENTDIR=/geesunn/resource/agent
 
+#win包名字
+WINTARNAME="win.zip"
 
-cd  $WORKDIR
-git checkout dev && git pull
-./pack.sh targz
+
+#当前目录
+CURRDIR=$(pwd)
+
+clearWorkDir(){
+	cd ${OUTDIR}
+	rm -rf  agent geesunn geesunn-agent.tar.gz
+	echo "please check. ${OUTDIR}"
+	ls -lh
+}
+
+
+
+extraHanle(){
+	if [ ! -n "$1" ];then
+		echo "没有任何动作附加动作"
+	elif [ "$1" == "-f" ];then
+		refreshLocalAgent
+	elif [ "$1" == "-h" ]; then
+		echo `
+				-h show help
+				-f 刷新本地Agent
+
+		`
+	fi
+}
+
+#重置工作目录
+resetWorkDir(){
+	rm -rf $OUTDIR
+	mkdir -p "${OUTDIR}/agent"
+}
+
+
+targz(){
+	cd $OUTDIR
+	ls "${OUTDIR}/agent"
+	tar zcf  $TARNAME agent
+	echo "--------------打包完毕 --------------"
+}
+
+#Windows Agent包
+windows(){
+	cd ${CURRDIR}
+	if [ ! -f  "${CURRDIR}/${WINTARNAME}" ]; then
+		echo "当前目录没有win.zip"
+		ls
+	else
+		echo "开始复制windowsAgent到:${OUTDIR}/agent"
+		unzip "${WINTARNAME}" -d "${OUTDIR}/agent"
+		cd $OUTDIR
+	fi
+}
+
+#Linux Agent包
+linux(){
+
+	cp /root/geesunn/targz/geesunn-agent.tar.gz $OUTDIR && cd $OUTDIR
+
+	tar zxvf $OUTDIR/geesunn-agent.tar.gz && mv geesunn-agent geesunn
+
+	echo "当前目录 : ${CURRDIR}"
+
+	# 复制Linux包
+	for name in  "${SYSNAME[@]}"; do
+		c="${OUTDIR}/agent/${name}"
+		echo  "创建目录： $c"
+		mkdir -p $c
+		cp -rf geesunn $c
+	done
+}
+
+#liux Agent 包编译
+linuxBuild(){
+	cd  $WORKDIR
+	git checkout dev && git pull
+	./pack.sh targz
+}
+
+#刷新本地Agent
+refreshLocalAgent(){
+		echo "--------------开始刷新本地Agent--------------"
+		for name in "${SYSNAME[@]}";do
+			c="${OUTDIR}/agent/${name}"
+			d="${LOCALAGENTDIR}/${name}"
+			rm -rf "${d}"
+			cp -rf "${c}" "${LOCALAGENTDIR}"
+		done
+
+		ls -l  ${LOCALAGENTDIR}
+		echo "--------------结束刷新本地Agent--------------"
+}
+
 
 #清空输出目录
-rm -rf $OUTDIR
-mkdir -p $OUTDIR
+resetWorkDir
 
-cp /root/geesunn/targz/geesunn-agent.tar.gz $OUTDIR && cd $OUTDIR
+# linux 编译
+linuxBuild
 
-tar zxvf $OUTDIR/geesunn-agent.tar.gz && mv geesunn-agent geesunn
+# 格式化linux包到指定目录
+linux
 
-echo "current directoy is : $(pwd)"
-for name in  "${SYSNAME[@]}"; do
-	c="${OUTDIR}/agent/${name}"
-	echo  "create directoy $c"
-	mkdir -p $c
-	cp -rf geesunn $c
-done
-
-#压缩
-tar zcf  $TARNAME agent
+# 格式化windows包到指定目录
+windows
 
 
-echo "--------------targz all agent --------------"
+#打包
+targz
 
-ls
-
-
-
-
-
-
-if [ ! -n "$1" ];then
-	echo "!!! no refresh local agent"
-elif [ "$1" == "-f" ];then
-	echo "--------------start refresh agent--------------"
-	for name in "${SYSNAME[@]}";do
-		c="${OUTDIR}/agent/${name}"
-		d="${LOCALAGENTDIR}/${name}"
-		echo "clear ${d} rigth now \n next line should be empty, be carefully!!!"
-		rm -rf "${d}"
-		cp -rf "${c}" "${LOCALAGENTDIR}"
-	done
-	
-	ls -l  ${LOCALAGENTDIR}
-	echo "--------------finish refresh agent--------------"
-elif [ "$1" == "-h" ]; then
-	echo `
-			-h show help
-			-f refresh local agent
-	
-	`
-fi
-
-
+# 附加动作
+extraHanle
 
 # 清除无用数据
-rm -rf  agent geesunn geesunn-agent.tar.gz
-cd "${OUTDIR}"
-echo "please check. ${OUTDIR}"
-ls -lh
-
-
-
+clearWorkDir
