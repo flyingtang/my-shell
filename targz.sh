@@ -28,7 +28,7 @@ CURRDIR=$(pwd)
 
 clearWorkDir(){
 	cd ${OUTDIR}
-	rm -rf  agent geesunn geesunn-agent.tar.gz
+	rm -rf  agent geesunn geesunn-agent geesunn-agent.tar.gz
 	ls -lh
 }
 
