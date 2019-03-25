@@ -22,35 +22,45 @@ LOCALAGENTDIR=/geesunn/resource/agent
 WINTARNAME="win.zip"
 
 
+VERSIONFILE="${OUTDIR}/version.txt"
+
+
+
 #当前目录
 CURRDIR=$(pwd)
 
 clearWorkDir(){
 	cd ${OUTDIR}
 	rm -rf  agent geesunn geesunn-agent.tar.gz
-	echo "please check. ${OUTDIR}"
 	ls -lh
 }
 
-
-
-extraHanle(){
-	if [ ! -n "$1" ];then
-		echo "没有任何动作附加动作"
-	elif [ "$1" == "-f" ];then
-		refreshLocalAgent
-	elif [ "$1" == "-h" ]; then
-		echo `
-				-h show help
-				-f 刷新本地Agent
-
-		`
+setVersion(){
+	if [ ! -f ${VERSIONFILE} ];then
+		echo "请输入版本号："
+		read VERSION
+		echo "${VERSION}" > ${VERSIONFILE}
+	else
+		VERSION=`cat ${VERSIONFILE}`
+		echo "555 $VERSION lalal"
 	fi
 }
 
+
+
+showHelp(){
+	echo "
+		-h show help
+		-f 刷新本地Agent
+		-v 设置版本
+		"
+}
+
+
+
 #重置工作目录
 resetWorkDir(){
-	rm -rf $OUTDIR
+	rm -rf "${OUTDIR}/agent"
 	mkdir -p "${OUTDIR}/agent"
 }
 
@@ -58,6 +68,8 @@ resetWorkDir(){
 targz(){
 	cd $OUTDIR
 	ls "${OUTDIR}/agent"
+	# agent_v3.1.tar.gz
+	TARNAME="agent_v${VERSION}.tar.gz"
 	tar zcf  $TARNAME agent
 	echo "--------------打包完毕 --------------"
 }
@@ -79,7 +91,6 @@ windows(){
 linux(){
 
 	cp /root/geesunn/targz/geesunn-agent.tar.gz $OUTDIR && cd $OUTDIR
-
 	tar zxvf $OUTDIR/geesunn-agent.tar.gz && mv geesunn-agent geesunn
 
 	echo "当前目录 : ${CURRDIR}"
@@ -114,25 +125,47 @@ refreshLocalAgent(){
 		echo "--------------结束刷新本地Agent--------------"
 }
 
+normal(){
+	#清空输出目录
+	resetWorkDir
+	# 设置版本号
+	setVersion
+	echo "当前版本号： ${VERSION}"
+	# linux 编译
+	linuxBuild
+	# 格式化linux包到指定目录
+	linux
+	# 格式化windows包到指定目录
+	windows
+	#打包
+	targz
+	# 附加动作
 
-#清空输出目录
-resetWorkDir
+	echo "please check. ${OUTDIR}"
+}
 
-# linux 编译
-linuxBuild
+extraHanle(){
+	case $1 in
+		"-h")
+			showHelp
+			;;
+		"-f")
+			normal
+			refreshLocalAgent
+			;;
+		"-v")
+			# 设置版本
+			setVersion
+			;;
+		*)
+			normal
 
-# 格式化linux包到指定目录
-linux
-
-# 格式化windows包到指定目录
-windows
+	esac
+}
 
 
-#打包
-targz
-
-# 附加动作
-extraHanle
+extraHanle $1
 
 # 清除无用数据
 clearWorkDir
+
