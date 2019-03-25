@@ -1,11 +1,11 @@
 #!/bin/bash
 # Linux 下Agent 打包
 # 直接打包
-# -f 参数 可以打包+刷新253的agent
-
+# -f 参数 可以打包+刷新253的agen
 
 #源码目录
 WORKDIR=$GOPATH/src/agent
+
 #输出目录
 OUTDIR=/home/xg/agent
 
@@ -21,10 +21,7 @@ LOCALAGENTDIR=/geesunn/resource/agent
 #win包名字
 WINTARNAME="win.zip"
 
-
 VERSIONFILE="${OUTDIR}/version.txt"
-
-
 
 #当前目录
 CURRDIR=$(pwd)
@@ -42,28 +39,23 @@ setVersion(){
 		echo "${VERSION}" > ${VERSIONFILE}
 	else
 		VERSION=`cat ${VERSIONFILE}`
-		echo "555 $VERSION lalal"
 	fi
 }
 
-
-
 showHelp(){
 	echo "
-		-h show help
-		-f 刷新本地Agent
-		-v 设置版本
+		-h  show help
+		-f  刷新本地Agent
+		-v  设置版本
+		-sv 查看当前版本
 		"
 }
-
-
 
 #重置工作目录
 resetWorkDir(){
 	rm -rf "${OUTDIR}/agent"
 	mkdir -p "${OUTDIR}/agent"
 }
-
 
 targz(){
 	cd $OUTDIR
@@ -107,21 +99,19 @@ linux(){
 #liux Agent 包编译
 linuxBuild(){
 	cd  $WORKDIR
-	git checkout dev && git pull
+	git checkout master && git pull
 	./pack.sh targz
 }
 
 #刷新本地Agent
 refreshLocalAgent(){
 		echo "--------------开始刷新本地Agent--------------"
-		for name in "${SYSNAME[@]}";do
-			c="${OUTDIR}/agent/${name}"
-			d="${LOCALAGENTDIR}/${name}"
-			rm -rf "${d}"
-			cp -rf "${c}" "${LOCALAGENTDIR}"
-		done
-
-		ls -l  ${LOCALAGENTDIR}
+		# ls -l  ${LOCALAGENTDIR}
+		rm -rf $LOCALAGENTDIR
+		# mkdir -p $LOCALAGENTDIR
+		cp -rf "${OUTDIR}/agent" $LOCALAGENTDIR
+		# 重启采集器
+		gmo restart collect
 		echo "--------------结束刷新本地Agent--------------"
 }
 
@@ -152,13 +142,23 @@ extraHanle(){
 		"-f")
 			normal
 			refreshLocalAgent
+			# 清除无用数据
+			clearWorkDir
 			;;
 		"-v")
 			# 设置版本
-			setVersion
+			echo "请输入版本号："
+			read VERSION
+			echo "${VERSION}" > ${VERSIONFILE}
+			;;
+		"-sv")
+			# 设置版本
+			echo "当前版本：`cat ${VERSIONFILE}`"
 			;;
 		*)
 			normal
+			# 清除无用数据
+			clearWorkDir
 
 	esac
 }
@@ -166,6 +166,7 @@ extraHanle(){
 
 extraHanle $1
 
-# 清除无用数据
-clearWorkDir
+#TODO 加入window自动替换
+
+
 
