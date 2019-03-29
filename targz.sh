@@ -149,6 +149,7 @@ extraHanle(){
 			# 设置版本
 			echo "请输入版本号："
 			read VERSION
+			mkdir -p $OUTDIR
 			echo "${VERSION}" > ${VERSIONFILE}
 			;;
 		"-sv")
