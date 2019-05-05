@@ -1,0 +1,108 @@
+#!/bin/sh
+#生成的表带有 DROP TABLE IF EXIST xxx表  会清空旧表
+
+# 备份目录
+BACKUPDIR="${HOME}/geesunn/sqlback"
+
+
+# 备份文件路径
+FILEPATH="${BACKUPDIR}/gsn_mcenter.sql"
+
+MYSQLCMD="/usr/local/mysql/bin/mysql"
+MYSQLDUMPCMD="/usr/local/mysql/bin/mysqlpump"
+
+
+# 数据库名称
+DATABASE="gsn_mcenter"
+
+HOSTNAME="127.0.0.1"
+
+
+# 初步校验Mysql用户名和密码
+checkoutUserParams(){
+    USERNAME=$1
+    PASSWORD=$2
+
+    if [ -z  ${USERNAME} ]; then
+        echo "用户名不能为空"
+        return 1
+    elif [ -z ${PASSWORD} ]; then
+        echo "密码不能为空"
+        return 1
+    else
+        echo "${USERNAME} ${PASSWORD}"
+        res=`${MYSQLCMD}  -h ${HOSTNAME} -u${USERNAME} -p${PASSWORD} -e "quit" 2>&1`
+        echo ${res}
+        if [[ $res =~ "ERROR" ]]; then
+            echo "用户名或者密码错误"
+            return 1
+        fi
+    fi
+    return 0
+}
+
+#备份
+backup(){
+    USERNAME=$1
+    PASSWORD=$2
+
+    mkdir -p ${BACKUPDIR}
+    MYCMD="${MYSQLCMD} -h ${HOSTNAME} -u${USERNAME} -p${PASSWORD}"
+    MYDUMP="${MYSQLDUMPCMD}  -h ${HOSTNAME} -u${USERNAME} -p${PASSWORD} --add-drop-table --single-transaction"
+    TABLES=`${MYCMD} -e "show tables from ${DATABASE};"|sed '1d'`
+
+    TABLENAMES=""
+    for table in $TABLES
+    do
+        if [[ $table =~ "20" ]]; then
+             echo "过滤${table}"
+        else
+           TABLENAMES="${TABLENAMES} ${table}"
+        fi
+    done
+    # 备份
+    $MYDUMP ${DATABASE} ${TABLENAMES} > ${FILEPATH}
+    echo "请查看目录文件： ${FILEPATH}"
+}
+
+# 恢复
+restore(){
+    if [ -f ${FILEPATH} ]; then
+        USERNAME=$1
+        PASSWORD=$2
+        MYCMD="${MYSQLCMD} -h ${HOSTNAME} -u${USERNAME} -p${PASSWORD}"
+
+        $MYCMD ${DATABASE} < ${FILEPATH}
+    else
+        echo "请先备份"
+        return
+    fi
+}
+
+
+case $1 in
+    "backup")
+
+        checkoutUserParams $2 $3
+        if [ $? -ne 0 ]; then
+            exit
+        fi
+        backup $2 $3
+        ;;
+    "restore")
+
+        checkoutUserParams $2 $3
+        if [ $? -ne 0 ]; then
+            exit
+        fi
+        restore $2 $3
+        ;;
+    *)
+    echo "
+       参数：
+            backup  username password    备份
+            restore username password    还原数据
+         "
+esac
+
+#SET GLOBAL max_allowed_packet=1072731894
