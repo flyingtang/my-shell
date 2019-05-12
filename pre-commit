@@ -1,0 +1,50 @@
+#!/bin/bash
+
+#当前脚本目录
+CURRDIR=$(pwd)
+
+
+if [[ ${CURRDIR} =~ sql/.git/hooks$ ]]; then
+    TARGETDIR="${CURRDIR}/../../"
+    cd ${TARGETDIR}
+elif [[ ${CURRDIR} =~ sql$ ]];then
+    echo ${CURRDIR}
+else
+    echo "脚本所在路径错误，请确认!!!"
+    exit
+fi
+
+#项目目录
+PROJECTDIR="$(pwd)/gsn_mcenter"
+
+#分支目录
+WORKPROJECT="${PROJECTDIR}/master"
+
+#版本地址
+ORDERFLE="${WORKPROJECT}/order.txt"
+
+#忽略文件
+IGNOREFILES=("order.txt" "readme.txt")
+
+#清空文件
+cat  /dev/null > ${ORDERFLE} 
+
+if [ ! -e ${ORDERFLE} ]; then 
+    touch ${ORDERFLE}
+fi
+
+
+#遍历文件、写入文件
+for file in `ls ${WORKPROJECT}`; do
+    isIgnore=0
+    for igfile in ${IGNOREFILES[*]}; do
+        if [ $file == $igfile ]; then
+            echo "忽略文件${file}"
+            isIgnore=1
+        fi
+    done
+    if [ ${isIgnore} -ne 1 ]; then
+           echo ${file} >> ${ORDERFLE}
+    fi
+done
+
